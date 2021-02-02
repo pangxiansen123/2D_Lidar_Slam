@@ -10,6 +10,8 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  nav_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -152,6 +154,7 @@ include_directories(
 
 add_library(${PROJECT_NAME}
    src/Matcher.cc
+   src/OccupanyMapper.cc
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}

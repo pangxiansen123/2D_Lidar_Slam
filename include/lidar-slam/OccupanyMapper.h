@@ -7,6 +7,8 @@
 #include <ros/ros.h>
 
 #include <Eigen/Core>
+#include <nav_msgs/OccupancyGrid.h>
+#include <tf/tf.h>
 
 typedef struct gridindex_
 {
@@ -32,18 +34,21 @@ typedef struct map_params
 } MapParams;
 
 
-
-unsigned char *pMap;
-
 class OccupanyMapper
 {
 private:
     /* data */
-    MapParams mapParams;
+    MapParams m_mapParams_;
+    unsigned char *m_pMap_;
 public:
-    OccupanyMapper(/* args */);
+    OccupanyMapper(MapParams param);
     ~OccupanyMapper();
     std::vector<GridIndex> TraceLine(int x0, int y0, int x1, int y1);
+    GridIndex ConvertWorld2GridIndex(double x, double y);
+    int GridIndexToLinearIndex(GridIndex index);
+    bool isValidGridIndex(GridIndex index);
+    void Mapping(std::vector<Eigen::Vector2d> &m_pts, Eigen::Vector3d& pose);
+    void PublishMap(ros::Publisher &map_pub);
 };
 
 #endif
