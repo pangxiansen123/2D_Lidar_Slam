@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   rosbag
   sensor_msgs
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -161,6 +162,7 @@ add_library(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   libnabo::nabo
 )
 
