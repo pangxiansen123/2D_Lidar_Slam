@@ -11,7 +11,11 @@
                 "/usr/include/**"
             ],
             "name": "ROS",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
         }
     ],
     "version": 4

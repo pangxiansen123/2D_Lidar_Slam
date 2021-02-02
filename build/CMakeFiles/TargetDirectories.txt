@@ -1,6 +1,7 @@
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/install/strip.dir
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/rebuild_cache.dir
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/test.dir
+/home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/lidar-slam.dir
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/std_msgs_generate_messages_nodejs.dir
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/std_msgs_generate_messages_lisp.dir
 /home/teamo/lidar-slam/src/lidar-slam/build/CMakeFiles/install/local.dir

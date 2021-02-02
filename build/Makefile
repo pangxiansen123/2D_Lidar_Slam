@@ -168,6 +168,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named lidar-slam
+
+# Build rule for target.
+lidar-slam: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 lidar-slam
+.PHONY : lidar-slam
+
+# fast build rule for target.
+lidar-slam/fast:
+	$(MAKE) -f CMakeFiles/lidar-slam.dir/build.make CMakeFiles/lidar-slam.dir/build
+.PHONY : lidar-slam/fast
+
+#=============================================================================
 # Target rules for targets named std_msgs_generate_messages_nodejs
 
 # Build rule for target.
@@ -479,6 +492,33 @@ gtest/fast:
 	$(MAKE) -f gtest/googlemock/gtest/CMakeFiles/gtest.dir/build.make gtest/googlemock/gtest/CMakeFiles/gtest.dir/build
 .PHONY : gtest/fast
 
+src/Matcher.o: src/Matcher.cc.o
+
+.PHONY : src/Matcher.o
+
+# target to build an object file
+src/Matcher.cc.o:
+	$(MAKE) -f CMakeFiles/lidar-slam.dir/build.make CMakeFiles/lidar-slam.dir/src/Matcher.cc.o
+.PHONY : src/Matcher.cc.o
+
+src/Matcher.i: src/Matcher.cc.i
+
+.PHONY : src/Matcher.i
+
+# target to preprocess a source file
+src/Matcher.cc.i:
+	$(MAKE) -f CMakeFiles/lidar-slam.dir/build.make CMakeFiles/lidar-slam.dir/src/Matcher.cc.i
+.PHONY : src/Matcher.cc.i
+
+src/Matcher.s: src/Matcher.cc.s
+
+.PHONY : src/Matcher.s
+
+# target to generate assembly for a file
+src/Matcher.cc.s:
+	$(MAKE) -f CMakeFiles/lidar-slam.dir/build.make CMakeFiles/lidar-slam.dir/src/Matcher.cc.s
+.PHONY : src/Matcher.cc.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -488,6 +528,7 @@ help:
 	@echo "... install/strip"
 	@echo "... rebuild_cache"
 	@echo "... test"
+	@echo "... lidar-slam"
 	@echo "... std_msgs_generate_messages_nodejs"
 	@echo "... std_msgs_generate_messages_lisp"
 	@echo "... install/local"
@@ -516,6 +557,9 @@ help:
 	@echo "... gmock"
 	@echo "... gtest_main"
 	@echo "... gtest"
+	@echo "... src/Matcher.o"
+	@echo "... src/Matcher.i"
+	@echo "... src/Matcher.s"
 .PHONY : help
 
 
