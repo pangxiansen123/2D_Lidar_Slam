@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: lidar-slam
+Description: Description of lidar-slam
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
