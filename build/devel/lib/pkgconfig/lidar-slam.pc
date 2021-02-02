@@ -1,8 +1,0 @@
-prefix=/home/teamo/lidar-slam/src/lidar-slam/build/devel
-
-Name: lidar-slam
-Description: Description of lidar-slam
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 
