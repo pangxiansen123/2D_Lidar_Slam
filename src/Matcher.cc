@@ -79,17 +79,18 @@ void Matcher::setTargetPointCloud(std::vector<Eigen::Vector2d> &_target_pcloud)
 //可以认为是xi在曲面上的高度．
 //用target_sourcePtcloud构造一个kd树．
 bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
-                                         double& height)
+                                         double& height,int near_index)
 {
     double weightSum = 0.0;
     double projSum = 0.0;
 
     // 找到位于点x附近(m_r)的所有的点云
+    //!以xi在目标点云中的最近点的20个邻近点近似xi的20个邻近点
     int searchNumber = 20;
-    Eigen::VectorXi nearIndices(searchNumber);
+    Eigen::VectorXi nearIndices = m_near_indix_[near_index];
     Eigen::VectorXd nearDist2(searchNumber);
 
-    //找到某一个点的最近邻．
+/*     //找到某一个点的最近邻．
     //搜索searchNumber个最近邻
     //下标储存在nearIndices中，距离储存在nearDist2中．
     //最大搜索距离为m_r
@@ -98,7 +99,7 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
     m_pTargetKDTree->knn(x,nearIndices,nearDist2,searchNumber,0,
                          Nabo::NNSearchD::SORT_RESULTS | Nabo::NNSearchD::ALLOW_SELF_MATCH|
                          Nabo::NNSearchD::TOUCH_STATISTICS,
-                         m_r);
+                         m_r); */
 
     std::vector<Eigen::Vector2d> nearPoints;
     std::vector<Eigen::Vector2d> nearNormals;
@@ -107,9 +108,7 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
     for(int i = 0; i < searchNumber;i++)
     {
         //说明最近邻是合法的．
-        if(nearDist2(i) < std::numeric_limits<double>::infinity() &&
-                std::isinf(nearDist2(i)) == false &&
-                std::isnan(nearDist2(i)) == false)
+        if(nearIndices[i]!= Eigen::Infinity)
         {
             //该最近邻在原始数据中的下标．
             int index = nearIndices(i);
@@ -198,6 +197,7 @@ void Matcher::projSourcePtToSurface(
 
         Eigen::Vector2d nearXi = m_targetKDTreeDataBase.col(indices(0));
 
+
         //为最近邻计算法向量．－－进行投影的时候，使用统一的法向量．
         Eigen::Vector2d nearNormal = m_targetPtCloudNormals[indices(0)];
 
@@ -216,9 +216,11 @@ void Matcher::projSourcePtToSurface(
             continue;
         }
 
+
+
         //进行匹配
         double height;
-        if(ImplicitMLSFunction(xi,height) == false)
+        if(ImplicitMLSFunction(xi,height,indices(0)) == false)
         {
             it = in_cloud.erase(it);
             continue;
@@ -461,12 +463,13 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
                 }
                 else 
                 {
-                    //indices.segment(ix,K-1).setZero();
+                    indices.segment(ix,K-ix).setConstant(Eigen::Infinity);
                     break;
                 }
             }
-            std::cout << dist2.transpose() << std::endl;
             //! 此处需要添加一个向量保存每个点的最近邻
+            m_near_indix_.push_back(indices);
+
 
             //计算法向量
             Eigen::Vector2d normal;

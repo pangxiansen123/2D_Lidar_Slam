@@ -25,6 +25,22 @@ System::System(std::string scan_topic_i,std::string map_topic_o,std::string pcl_
 
     //初始化匹配器
     pt_matcher_ = new Matcher();
+
+    //初始化地图
+    MapParams params;
+    params.width = 1000;
+    params.height = 1000;
+    params.resolution = 0.05;
+    params.log_occ = 2;
+    params.log_free = -1;
+    params.log_min = 0;
+    params.log_max = 100;
+    params.offset_x = 500;
+    params.offset_y = 500;
+    params.origin_x = 0.0;
+    params.origin_y = 0.0;
+
+    pt_mapper_ = new OccupanyMapper(params);
 }
 
 System::~System()
@@ -92,6 +108,8 @@ void System::PubPath(Eigen::Vector3d& pose, nav_msgs::Path &path, ros::Publisher
         mcu_path_pub_.publish(path);
 }
 
+
+
 //激光雷达数据回调函数
 void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
     sensor_msgs::MultiEchoLaserScan scan = *msg;
@@ -117,12 +135,17 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
         pt_matcher_->setTargetPointCloud(m_local_pts_);
 
+        //更新全局坐标点
+        TOOLS::Translocaltompts(m_local_pts_,m_pts_,m_poses_[m_scan_id_]);
+
+        //建图
+        pt_mapper_->Mapping(m_pts_,m_poses_[m_scan_id_]);
+
         m_is_first_frame_ = false;
         m_scan_id_++;
         return;
     }
 
-    std::cout << "开始跟踪!!!" << std::endl;
 
     //将当前扫描数据转换为激光坐标系下的点云
     std::vector<Eigen::Vector2d> now_local_pts;
@@ -151,6 +174,16 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
         //发布路径
         PubPath(m_poses_[m_scan_id_],m_path_,m_path_pub_);
+
+        //更新全局坐标点
+        TOOLS::Translocaltompts(m_local_pts_,m_pts_,m_poses_[m_scan_id_]);
+
+        //建图
+        pt_mapper_->Mapping(m_pts_,m_poses_[m_scan_id_]);
+
+        if(m_scan_id_%5==0){
+            pt_mapper_->PublishMap(m_map_pub_);
+        }
 
         m_scan_id_++;
     }

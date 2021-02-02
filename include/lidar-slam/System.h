@@ -14,6 +14,7 @@
 #include <geometry_msgs/Point32.h>
 #include <boost/foreach.hpp>
 #include "lidar-slam/Matcher.h"
+#include "lidar-slam/OccupanyMapper.h"
 
 class System
 {
@@ -42,6 +43,8 @@ private:
 
     //保存前一帧的局部坐标点
     std::vector<Eigen::Vector2d> m_local_pts_;
+    //保存前一帧的世界坐标点
+    std::vector<Eigen::Vector2d> m_pts_;
     //保存全局坐标系下的位姿向量
     std::vector<Eigen::Vector3d> m_poses_;
     //当前帧的序列号
@@ -49,7 +52,11 @@ private:
     //路径
     nav_msgs::Path m_path_;
 
+    //imls匹配器
     Matcher* pt_matcher_;
+
+    //地图
+    OccupanyMapper* pt_mapper_;
 
 public:
     System(std::string scan_topic_i,std::string map_topic_o,std::string pcl_topic_o,std::string path_topic_o,ros::NodeHandle& nh );

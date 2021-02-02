@@ -36,7 +36,7 @@ public:
 
     //IMLS函数，主要功能为进行把xi投影到表面上．
     bool ImplicitMLSFunction(Eigen::Vector2d x,
-                             double& height);
+                             double& height, int near_index);
 
     //把点云进行投影，投影到表面surface之中．
     void projSourcePtToSurface(std::vector<Eigen::Vector2d>& in_cloud,

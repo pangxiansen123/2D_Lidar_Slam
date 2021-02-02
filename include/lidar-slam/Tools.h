@@ -22,5 +22,22 @@ void TransLaserscanTolocalpts(sensor_msgs::MultiEchoLaserScan& scan,std::vector<
         local_pts.push_back(Eigen::Vector2d(lx,ly));
     }
 }
+
+//将局部坐标点转换为世界坐标系下的全局坐标点
+void Translocaltompts(std::vector<Eigen::Vector2d>& local_pts,std::vector<Eigen::Vector2d>& m_pts,Eigen::Vector3d & pose){
+    double tx = pose.x();
+    double ty = pose.y();
+    double theta = pose.z();
+
+    Eigen::Matrix2d R;
+    R << std::cos(theta), -std::sin(theta),
+         std::sin(theta),  std::cos(theta);
+
+    m_pts.clear();
+    for(int i=0;i<local_pts.size();++i){
+        m_pts.push_back(R*local_pts[i] + Eigen::Vector2d(tx,ty));
+    }
+}
+
 }
 #endif
