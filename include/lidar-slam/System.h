@@ -5,6 +5,9 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/PointCloud.h>
 #include <nav_msgs/Path.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <sensor_msgs/MultiEchoLaserScan.h>
 
 class System
 {
@@ -35,6 +38,7 @@ public:
     ~System();
     void SetTestMode(std::string bagfile);
     void Run();
+    void LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg);
 };
 
 

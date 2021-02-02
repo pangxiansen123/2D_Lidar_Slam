@@ -28,14 +28,45 @@ void System::SetTestMode(std::string bagfile){
     m_is_test_ = true;
 }
 
+//系统运行函数
 void System::Run(){
 
     if(m_is_test_){
+        //! 测试消息
         std::cout << "欢迎进入测试模式" <<std::endl;
+        //读取rosbag文件
+        rosbag::Bag bag;
+        bag.open(m_bag_file_, rosbag::bagmode::Read);
 
+        //添加要读取的消息
+        std::vector<std::string> topics;
+        topics.push_back(std::string(m_topic_scan_i_));
+        rosbag::View view(bag, rosbag::TopicQuery(topics));
 
+        //按顺序读取bag内激光的消息和里程计的消息
+        //! 测试消息
+        std::cout << "开始循环读取rosbag内消息" << std::endl;
+        BOOST_FOREACH(rosbag::MessageInstance const m, view)
+        {
+            sensor_msgs::MultiEchoLaserScanConstPtr scan = m.instantiate<sensor_msgs::MultiEchoLaserScan>();
+            if(scan != NULL)
+                LaserScanCallback(scan);
+
+            if(!ros::ok())
+                break;
+        }
     }else{
 
 
     }
+}
+
+//激光雷达数据回调函数
+void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
+    sensor_msgs::MultiEchoLaserScan scan = *msg;
+    //! 测试消息
+    //std::cout << scan.header.stamp << std::endl;
+
+    
+
 }
