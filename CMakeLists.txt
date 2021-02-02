@@ -153,12 +153,21 @@ include_directories(
 # )
 
 add_library(${PROJECT_NAME}
-   src/Matcher.cc
-   src/OccupanyMapper.cc
+  src/Matcher.cc
+  src/OccupanyMapper.cc
+  src/System.cc
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   libnabo::nabo
+)
+
+add_executable(Slam_node 
+  src/Slam_test.cc
+)
+
+target_link_libraries(Slam_node
+  ${PROJECT_NAME}
 )
 
 #############
