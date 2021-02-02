@@ -4,13 +4,13 @@
 Matcher::Matcher(void )
 {
     //用来计算权重和剔除外点
-    m_r = 1;
-    m_h = 0.3;
+    m_r = 3;
+    m_h = 1;
     
     m_Iterations = 10;//匹配迭代次数
     m_PtID = 0;
     
-    m_pTargetKDTree = m_pSourceKDTree = NULL;
+    m_pTargetKDTree = NULL;
 }
 
 //构造函数，可以指定参数
@@ -20,7 +20,7 @@ Matcher::Matcher(double _r,double _h,int _iter)
     m_h = _h;
     m_Iterations = _iter;
     m_PtID = 0;
-    m_pTargetKDTree = m_pSourceKDTree = NULL;
+    m_pTargetKDTree = NULL;
 }
 
 
@@ -30,8 +30,6 @@ Matcher::~Matcher(void )
     if(m_pTargetKDTree != NULL)
         delete m_pTargetKDTree;
 
-    if(m_pSourceKDTree != NULL)
-        delete m_pSourceKDTree;
 }
 
 //设定迭代次数
@@ -40,41 +38,11 @@ void Matcher::setIterations(int _iter)
     m_Iterations = _iter;
 }
 
-
-//去除非法数据
-/* void Matcher::RemoveNANandINFData(std::vector<Eigen::Vector2d> &_input)
-{
-    //去除非法数据．
-    for(std::vector<Eigen::Vector2d>::iterator it = _input.begin();it != _input.end();)
-    {
-        Eigen::Vector2d tmpPt = *it;
-        if(std::isnan(tmpPt(0)) || std::isnan(tmpPt(1)) ||
-                std::isinf(tmpPt(0)) || std::isinf(tmpPt(1)))
-        {
-            it = _input.erase(it);
-        }
-        else
-        {
-            it++;
-        }
-    }
-} */
-
-
 //设定源点云(当前帧的点云)
 void Matcher::setSourcePointCloud(std::vector<Eigen::Vector2d> &_source_pcloud)
 {
     m_sourcePointCloud = _source_pcloud;
-
-    //去除非法数据
-    //RemoveNANandINFData(m_sourcePointCloud);
     
-}
-
-//设定源点云的法向量
-void Matcher::setSourcePointCloudNormals(std::vector<Eigen::Vector2d> &_normals)
-{
-    m_sourcePtCloudNormals = _normals;
 }
 
 //设置目标点云（前一帧的点云）
@@ -89,9 +57,6 @@ void Matcher::setTargetPointCloud(std::vector<Eigen::Vector2d> &_target_pcloud)
         delete m_pTargetKDTree;
         m_pTargetKDTree = NULL;
     }
-
-    //移除非法数据
-    //RemoveNANandINFData(m_targetPointCloud);
 
     //构建kd树．
     if(m_pTargetKDTree == NULL)
@@ -119,18 +84,6 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
     double weightSum = 0.0;
     double projSum = 0.0;
 
-    //创建KD树
-    if(m_pTargetKDTree == NULL)
-    {
-        m_targetKDTreeDataBase.resize(2,m_targetPointCloud.size());
-        for(int i = 0; i < m_targetPointCloud.size();i++)
-        {
-            m_targetKDTreeDataBase(0,i) = m_targetPointCloud[i](0);
-            m_targetKDTreeDataBase(1,i) = m_targetPointCloud[i](1);
-        }
-        m_pTargetKDTree = Nabo::NNSearchD::createKDTreeLinearHeap(m_targetKDTreeDataBase);
-    }
-
     // 找到位于点x附近(m_r)的所有的点云
     int searchNumber = 20;
     Eigen::VectorXi nearIndices(searchNumber);
@@ -140,6 +93,8 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
     //搜索searchNumber个最近邻
     //下标储存在nearIndices中，距离储存在nearDist2中．
     //最大搜索距离为m_r
+
+    //?这个值在计算法向量时候就已经计算过了
     m_pTargetKDTree->knn(x,nearIndices,nearDist2,searchNumber,0,
                          Nabo::NNSearchD::SORT_RESULTS | Nabo::NNSearchD::ALLOW_SELF_MATCH|
                          Nabo::NNSearchD::TOUCH_STATISTICS,
@@ -147,6 +102,8 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
 
     std::vector<Eigen::Vector2d> nearPoints;
     std::vector<Eigen::Vector2d> nearNormals;
+
+
     for(int i = 0; i < searchNumber;i++)
     {
         //说明最近邻是合法的．
@@ -193,16 +150,15 @@ bool Matcher::ImplicitMLSFunction(Eigen::Vector2d x,
 
     //TODO
     //根据函数进行投影．计算height，即ppt中的I(x)
-	double sum1 = 0.0, sum2 = 0.0;
 	for (int i = 0; i < nearPoints.size(); i++) {
 		auto p_i = nearPoints[i];
 		auto normal_i = nearNormals[i];
 		auto diff = x - p_i;
 		double wi = exp(- (diff.squaredNorm()) / (m_h * m_h));
-		sum1 += (wi * (diff.dot(normal_i)));
-		sum2 += wi;
+		projSum += (wi * (diff.dot(normal_i)));
+		weightSum += wi;
 	}
-	height = sum1 / sum2;
+	height = projSum / weightSum;
     //end of TODO
 
     return true;
@@ -228,7 +184,8 @@ void Matcher::projSourcePtToSurface(
     out_cloud.clear();
     out_normal.clear();
 
-    for(std::vector<Eigen::Vector2d>::iterator it = in_cloud.begin(); it != in_cloud.end();)//遍历每一个点
+    //遍历原始点云上的每一个点，求得对应的在目标点云的投影点
+    for(std::vector<Eigen::Vector2d>::iterator it = in_cloud.begin(); it != in_cloud.end();)
     {
         Eigen::Vector2d xi = *it;
 
@@ -469,20 +426,20 @@ Eigen::Vector2d Matcher::ComputeNormal(std::vector<Eigen::Vector2d> &nearPoints)
  * 最终使用的ICP匹配函数．
  * @param finalResult
  * @param covariance
+ * @param M_predict
  * @return
  */
 bool Matcher::Match(Eigen::Matrix3d& finalResult,
                            Eigen::Matrix3d& covariance,Eigen::Matrix3d M_predict )
 {   
-    clock_t start = clock();
-    //如果没有设置法向量，则自动进行计算．
+    //!测试输出
+    //为目标点云计算法向量
     if(m_isGetNormals == false)
     {
         //自动计算target pointcloud中每个点的法向量
         m_targetPtCloudNormals.clear();
         for(int i = 0; i < m_targetPointCloud.size();i++)
         {
-            
             Eigen::Vector2d xi = m_targetPointCloud[i];
             //寻找20个最近点
             int K = 20;
@@ -491,7 +448,8 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
             int num = m_pTargetKDTree->knn(xi,indices,dist2,K,0.0,
                                            Nabo::NNSearchD::SORT_RESULTS | Nabo::NNSearchD::ALLOW_SELF_MATCH|
                                            Nabo::NNSearchD::TOUCH_STATISTICS,
-                                           10);
+                                           m_r);
+
 
             std::vector<Eigen::Vector2d> nearPoints;
             for(int ix = 0; ix < K;ix++)
@@ -499,10 +457,16 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
                 if(dist2(ix) < std::numeric_limits<double>::infinity() &&
                         std::isinf(dist2(ix)) == false)
                 {
-                    nearPoints.push_back(m_targetKDTreeDataBase.col(indices(ix)));
+                    nearPoints.push_back(m_targetKDTreeDataBase.col(indices(ix)));//!indices(ix)保存的是第ix个最近邻的索引
                 }
-                else break;
+                else 
+                {
+                    //indices.segment(ix,K-1).setZero();
+                    break;
+                }
             }
+            std::cout << dist2.transpose() << std::endl;
+            //! 此处需要添加一个向量保存每个点的最近邻
 
             //计算法向量
             Eigen::Vector2d normal;
@@ -518,19 +482,20 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
             m_targetPtCloudNormals.push_back(normal);
         }
     }
-    clock_t ends = clock();
-    std::cout <<"为目标点云计算法向量花费时间: "<<(double)(ends - start)/ CLOCKS_PER_SEC << std::endl;
-    
+
+
     //初始化估计值．
     Eigen::Matrix3d result;//?此处是否可以采用前两帧的差作为初始估计
     result.setIdentity();
     covariance.setIdentity();
     
-    start = clock();
+    //开始迭代
     for(int i = 0; i < m_Iterations;i++)
     {
         //根据当前估计的位姿对原始点云进行转换．原始点云是当前帧，目标点云是前一帧
+
         std::vector<Eigen::Vector2d> in_cloud;//当前帧的点转换到上一帧中的位置
+
         for(int ix = 0; ix < m_sourcePointCloud.size();ix++)
         {
             Eigen::Vector3d origin_pt;
@@ -548,6 +513,8 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
         //因此，这个函数出来之后，in_cloud和ref_cloud是一一匹配的．
         std::vector<Eigen::Vector2d> ref_cloud;
         std::vector<Eigen::Vector2d> ref_normal;
+
+        //把原始点云投影到目标点云上
         projSourcePtToSurface(in_cloud,
                               ref_cloud,
                               ref_normal);
@@ -559,6 +526,7 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
             std::cout <<"ICP Iterations Failed!!"<<std::endl;
             return false;
         }
+        
         //计算帧间位移．从当前的source -> target
         Eigen::Matrix3d deltaTrans;
         bool flag = SolveMotionEstimationProblem(in_cloud,
@@ -586,9 +554,25 @@ bool Matcher::Match(Eigen::Matrix3d& finalResult,
         }
     }
 
-    ends = clock();
-    std::cout <<"迭代求解最优位姿花费时间: "<<(double)(ends - start)/ CLOCKS_PER_SEC << std::endl;
     finalResult = result;
+
+
+    m_targetPointCloud = m_sourcePointCloud;
+    delete m_pTargetKDTree;
+    m_pTargetKDTree = NULL;
+    if(m_pTargetKDTree == NULL)
+    {
+        m_targetKDTreeDataBase.resize(2,m_targetPointCloud.size());
+        for(int i = 0; i < m_targetPointCloud.size();i++)
+        {
+            m_targetKDTreeDataBase(0,i) = m_targetPointCloud[i](0);
+            m_targetKDTreeDataBase(1,i) = m_targetPointCloud[i](1);
+        }
+        m_pTargetKDTree = Nabo::NNSearchD::createKDTreeLinearHeap(m_targetKDTreeDataBase);
+    }
+
+    m_isGetNormals = false;
+    m_near_indix_.clear();
     return true;
 }
 

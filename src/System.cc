@@ -115,6 +115,7 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
         //发布路径
         PubPath(m_poses_[m_scan_id_],m_path_,m_path_pub_);
 
+        pt_matcher_->setTargetPointCloud(m_local_pts_);
 
         m_is_first_frame_ = false;
         m_scan_id_++;
@@ -129,7 +130,6 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
     //设置当前帧和前一帧的点云
     pt_matcher_->setSourcePointCloud(now_local_pts);
-    pt_matcher_->setTargetPointCloud(m_local_pts_);
 
     Eigen::Matrix3d T_nowtopre,rCovariance;
     if(pt_matcher_->Match(T_nowtopre,rCovariance,Eigen::Matrix3d().setZero())){
@@ -151,7 +151,7 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
         //发布路径
         PubPath(m_poses_[m_scan_id_],m_path_,m_path_pub_);
-        
+
         m_scan_id_++;
     }
     else{

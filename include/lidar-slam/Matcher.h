@@ -29,8 +29,6 @@ public:
 
     void setTargetPointCloud(std::vector<Eigen::Vector2d>& _target_pcloud);
 
-    void setSourcePointCloudNormals(std::vector<Eigen::Vector2d>& _normals);
-
     void setTargetPointCloudNormals(std::vector<Eigen::Vector2d>& _normals);
 
     void createKDTreeUsingLocalMap(void );
@@ -69,16 +67,13 @@ private:
     std::vector<Eigen::Vector2d> m_sourcePointCloud,m_targetPointCloud;
 
     //目标点云的法向量
-    std::vector<Eigen::Vector2d> m_sourcePtCloudNormals,m_targetPtCloudNormals;
+    std::vector<Eigen::Vector2d> m_targetPtCloudNormals;
 
     //所有的激光帧数据，每一个激光帧数据对应的点云的下标．
     std::map<int,std::vector<int> > m_LaserFrames;
 
     //指针
     Nabo::NNSearchD* m_pTargetKDTree;
-    Nabo::NNSearchD* m_pSourceKDTree;
-
-    Eigen::MatrixXd m_sourceKDTreeDataBase;
 
     Eigen::MatrixXd m_targetKDTreeDataBase;
 
@@ -97,6 +92,9 @@ private:
 
     //用来判断是否需要自己进行计算．
     bool m_isGetNormals;
+    
+    //保存目标点云中每个点的20个最近邻及其是否有效
+    std::vector<Eigen::VectorXi> m_near_indix_;
 
 };
 
