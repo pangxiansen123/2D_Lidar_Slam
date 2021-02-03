@@ -1,6 +1,7 @@
 #ifndef OCCUPANY_MAPPER_H
 #define OCCUPANY_MAPPER_H
 
+
 #include <iostream>
 #include <vector>
 

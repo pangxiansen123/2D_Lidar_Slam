@@ -10,6 +10,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  std_msgs
   nav_msgs
   tf
   rosbag
@@ -156,13 +157,15 @@ include_directories(
 # )
 
 add_library(${PROJECT_NAME}
-  src/Matcher.cc
   src/OccupanyMapper.cc
+  src/NDTMatcher.cc
+  src/Matcher.cc
   src/System.cc
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
+  /opt/ros/melodic/lib/libcsm.so
   libnabo::nabo
 )
 

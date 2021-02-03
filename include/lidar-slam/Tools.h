@@ -3,6 +3,8 @@
 
 #include <sensor_msgs/MultiEchoLaserScan.h>
 #include <Eigen/Core>
+#define GN_PI 3.1415926
+
 
 namespace TOOLS{
 
@@ -37,6 +39,17 @@ void Translocaltompts(std::vector<Eigen::Vector2d>& local_pts,std::vector<Eigen:
     for(int i=0;i<local_pts.size();++i){
         m_pts.push_back(R*local_pts[i] + Eigen::Vector2d(tx,ty));
     }
+}
+
+//角度正则化
+double NormalizationAngle(double angle)
+{
+    if(angle > GN_PI)
+        angle -= 2*GN_PI;
+    else if(angle < -GN_PI)
+        angle += 2*GN_PI;
+
+    return angle;
 }
 
 }

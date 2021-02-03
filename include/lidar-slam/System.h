@@ -13,9 +13,8 @@
 #include <tf/tf.h>
 #include <geometry_msgs/Point32.h>
 #include <boost/foreach.hpp>
-#include "lidar-slam/Matcher.h"
 #include "lidar-slam/OccupanyMapper.h"
-
+#include <csm/csm_all.h>
 class System
 {
 private:
@@ -53,10 +52,20 @@ private:
     nav_msgs::Path m_path_;
 
     //imls匹配器
-    Matcher* pt_matcher_;
+    //Matcher* pt_matcher_;
 
     //地图
     OccupanyMapper* pt_mapper_;
+
+    //NDT匹配器
+    //NDTMatecher m_NDT_matcher_;
+
+    //PLICP匹配器
+    //PLMatcher m_pl_matcher_;
+
+    LDP m_prevLDP;
+  	sm_params m_PIICPParams;
+  	sm_result m_OutputResult;
 
 public:
     System(std::string scan_topic_i,std::string map_topic_o,std::string pcl_topic_o,std::string path_topic_o,ros::NodeHandle& nh );
@@ -65,6 +74,10 @@ public:
     void Run();
     void LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg);
     void PubPath(Eigen::Vector3d& pose, nav_msgs::Path &path, ros::Publisher &mcu_path_pub_);
+    void SetPIICPParams();
+    void LaserScanToLDP(sensor_msgs::MultiEchoLaserScanConstPtr& pScan,LDP& ldp);
+    Eigen::Vector3d  PIICPBetweenTwoFrames(LDP& currentLDPScan,
+                                                  Eigen::Vector3d tmprPose);
 };
 
 
