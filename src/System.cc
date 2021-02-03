@@ -28,15 +28,15 @@ System::System(std::string scan_topic_i,std::string map_topic_o,std::string pcl_
 
     //初始化地图
     MapParams params;
-    params.width = 1000;
-    params.height = 1000;
+    params.width = 2000;
+    params.height = 2000;
     params.resolution = 0.05;
     params.log_occ = 2;
     params.log_free = -1;
     params.log_min = 0;
     params.log_max = 100;
-    params.offset_x = 500;
-    params.offset_y = 500;
+    params.offset_x = params.width/2;
+    params.offset_y = params.height/2;
     params.origin_x = 0.0;
     params.origin_y = 0.0;
 
@@ -245,7 +245,27 @@ void System::PubPath(Eigen::Vector3d& pose, nav_msgs::Path &path, ros::Publisher
         mcu_path_pub_.publish(path);
 }
 
+//发布点云信息
+void System::PubPcl(Eigen::Vector3d& pose,std::vector<Eigen::Vector2d> & pts,ros::Publisher &mcu_pcl_pub_){
+    sensor_msgs::PointCloud cloud;
+    cloud.header.stamp = ros::Time::now();
+    cloud.header.frame_id = "odom";
+    cloud.points.resize(pts.size());
 
+    cloud.channels.resize(1);
+    cloud.channels[0].name = "intensities";
+    cloud.channels[0].values.resize(pts.size());
+
+    for(int i=0;i<pts.size();++i){
+      cloud.points[i].x = pts[i].x();
+      cloud.points[i].y = pts[i].y();
+      cloud.points[i].z = 0.1;
+      cloud.channels[0].values[i] = random();
+    }
+
+    mcu_pcl_pub_.publish(cloud);
+
+}
 
 //激光雷达数据回调函数
 void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
@@ -275,6 +295,9 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
         //更新全局坐标点
         TOOLS::Translocaltompts(m_local_pts_,m_pts_,m_poses_[m_scan_id_]);
 
+        //发布点云信息
+        PubPcl(m_poses_[m_scan_id_],m_pts_,m_pcl_pub_);
+
         //NDT地图创建
         //m_NDT_matcher_.CreateMapFromLaserPoints(m_poses_[m_scan_id_],m_local_pts_,0.1);
 
@@ -296,8 +319,15 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
     LDP currentLDP;
     LaserScanToLDP(msg, currentLDP);
+    Eigen::Vector3d d_point_scan;
 
-    Eigen::Vector3d d_point_scan = PIICPBetweenTwoFrames(currentLDP, Eigen::Vector3d::Zero());
+    if(m_scan_id_>1){
+        d_point_scan = PIICPBetweenTwoFrames(currentLDP, m_pose_predict_);
+    }else{
+        d_point_scan = PIICPBetweenTwoFrames(currentLDP, Eigen::Vector3d::Zero());
+    }    
+
+    
 
     Eigen::Matrix3d T_nowtopre;
     T_nowtopre << cos(d_point_scan(2)), -sin(d_point_scan(2)), d_point_scan(0),
@@ -323,6 +353,9 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
     //更新全局坐标点
     TOOLS::Translocaltompts(m_local_pts_,m_pts_,m_poses_[m_scan_id_]);
 
+    //发布点云信息
+    PubPcl(m_poses_[m_scan_id_],m_pts_,m_pcl_pub_);
+
     //建图
     pt_mapper_->Mapping(m_pts_,m_poses_[m_scan_id_]);
 
@@ -332,6 +365,9 @@ void System::LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg){
 
     //更新PLICP参数
     m_prevLDP = currentLDP;
+    //更新预测
+
+    m_pose_predict_ = d_point_scan;
 
     m_scan_id_++;
 

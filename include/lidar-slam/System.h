@@ -15,6 +15,7 @@
 #include <boost/foreach.hpp>
 #include "lidar-slam/OccupanyMapper.h"
 #include <csm/csm_all.h>
+#include <sensor_msgs/PointCloud.h>
 class System
 {
 private:
@@ -67,6 +68,9 @@ private:
   	sm_params m_PIICPParams;
   	sm_result m_OutputResult;
 
+    //PLICP预测值
+    Eigen::Vector3d m_pose_predict_;
+
 public:
     System(std::string scan_topic_i,std::string map_topic_o,std::string pcl_topic_o,std::string path_topic_o,ros::NodeHandle& nh );
     ~System();
@@ -74,6 +78,7 @@ public:
     void Run();
     void LaserScanCallback(sensor_msgs::MultiEchoLaserScanConstPtr& msg);
     void PubPath(Eigen::Vector3d& pose, nav_msgs::Path &path, ros::Publisher &mcu_path_pub_);
+    void PubPcl(Eigen::Vector3d& pose,std::vector<Eigen::Vector2d> & pts,ros::Publisher &mcu_pcl_pub_);
     void SetPIICPParams();
     void LaserScanToLDP(sensor_msgs::MultiEchoLaserScanConstPtr& pScan,LDP& ldp);
     Eigen::Vector3d  PIICPBetweenTwoFrames(LDP& currentLDPScan,
